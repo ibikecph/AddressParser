@@ -76,6 +76,9 @@
 
 
 + (NSDictionary*)parseAddress:(NSString*)addressString {
+    NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
+    [set addCharactersInString:@","];
+    addressString = [addressString stringByTrimmingCharactersInSet:set];
     NSMutableArray * arr = [NSMutableArray arrayWithArray:[addressString componentsSeparatedByString:@","]];
     /**
      * clean the strings by trimming them
@@ -97,6 +100,28 @@
         if ([d objectForKey:@"number"] == nil && [self testNumber:[arr objectAtIndex:0]]) {
             [d setValue:[arr objectAtIndex:0] forKey:@"number"];
             [arr removeObjectAtIndex:0];
+        } else {
+            NSString * number = nil;
+            NSMutableArray * a = [NSMutableArray arrayWithArray:[[arr objectAtIndex:0] componentsSeparatedByString:@" "]];
+            if ([arr count] > 0) {
+                for (int i = 0; i < [a count]; i++) {
+                    [a replaceObjectAtIndex:i withObject:[[a objectAtIndex:i] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+                }
+                
+                for (NSString * s in a) {
+                    if ([self testNumber:s]) {
+                        number = s;
+                        break;
+                    }
+                }
+                
+                if (number) {
+                    [d setValue:number forKey:@"number"];
+                    [a removeObject:number];
+                    [arr replaceObjectAtIndex:0 withObject:[a componentsJoinedByString:@" "]];
+                }
+            }
+            
         }
         
         if ([arr count] > 1) {
