@@ -13,6 +13,5 @@
 
 + (NSDictionary*)parseAddress:(NSString*)addressString;
 
-+ (void)parseTest;
 
 @end

@@ -61,4 +61,27 @@
 }
 
 
+- (IBAction)doParseSingle:(id)sender {
+    [_street setStringValue:@""];
+    [_house setStringValue:@""];
+    [_city setStringValue:@""];
+    [_zip setStringValue:@""];
+    if ([_inputText.stringValue isEqualToString:@""] == NO) {
+        NSDictionary * d = [SMAddressParser parseAddress:_inputText.stringValue];
+        if ([d objectForKey:@"street"]) {
+            [_street setStringValue:[d objectForKey:@"street"]];
+        }
+        if ([d objectForKey:@"number"]) {
+            [_house setStringValue:[d objectForKey:@"number"]];
+        }
+        if ([d objectForKey:@"zip"]) {
+            [_zip setStringValue:[d objectForKey:@"zip"]];
+        }
+        if ([d objectForKey:@"city"]) {
+            [_city setStringValue:[d objectForKey:@"city"]];
+        }
+        
+    }
+}
+
 @end

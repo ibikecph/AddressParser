@@ -225,45 +225,4 @@
     return @{};
 }
 
-+ (void)parseTest {
-    NSArray * streets = @[
-                          @"elledevej",
-                          @"elledevej, kalundborg",
-                          @"elledevej kalundborg",
-                          @"elledevej, 4400",
-                          @"elledevej 4400",
-                          @"elledevej, 4400 kalundborg",
-                          @"elledevej, kalundborg 4400",
-                          @"elledevej 4400 kalundborg",
-                          @"elledevej kalundborg 4400",
-                          @"elledevej 999C",
-                          @"elledevej 999C, kalundborg",
-                          @"elledevej 999C kallundborg",
-                          @"elledevej 999C, 4400",
-                          @"elledevej 999C 4400",
-                          @"elledevej 999C, 4400 kalundborg",
-                          @"elledevej 999C, kalundborg 4400",
-                          @"elledevej 999C 4400 kalundborg",
-                          @"elledevej 999C kalundborg 4400",
-                          @"Sonnerup Gade 35, 4060",
-                          @"Sonnerup Gade 35, Kirke Sonnerup",
-                          @"Sonnerup Gade 35, 4060 Kirke Sonnerup",
-                          @"Sonnerup Gade 35 4060 Kirke Sonnerup",
-                          @"Sonnerup Gade 35, Kirke Sonnerup",
-                          @"Sonnerup Gade 35, Kirke Sonnerup 4060",
-                          @"4400 kalundborg",
-                          @"sonnerup gade 35, 4600, kalundborg, sjælland",
-                          @"sonnerup gade, 44",
-                          @"sonnerup gade, 44, 4400",
-                          @"sonnerup gade 44, 4400, kalundborg",
-                          @"sonnerup gade 44, kalundborg, 4400",
-                          @"sonnerup gade, 44, kalundborg, 4400"
-                          ];
-    
-    for (NSString * s in streets) {
-        NSDictionary * d = [self parseAddress:s];
-        NSLog(@"\nInput: %@\nResult: %@\n\n", s, d);
-    }
-}
-
 @end
