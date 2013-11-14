@@ -52,10 +52,53 @@
         if ([[NSFileManager defaultManager] fileExistsAtPath:_testFile.stringValue isDirectory:NO]) {
             [_testOutput setString:@""];
             NSString * content = [NSString stringWithContentsOfFile:_testFile.stringValue usedEncoding:nil error:NULL];
+            NSMutableArray * input = [NSMutableArray array];
+            NSMutableArray * output = [NSMutableArray array];
+            NSUInteger i = 0;
             for (NSString *line in [content componentsSeparatedByString:@"\n"]) {
-                NSDictionary * d = [SMAddressParser parseAddress:line];
-                [_testOutput insertText:[NSString stringWithFormat:@"Input: %@\nOutput:\n%@\n***************\n\n", line, d]];
+                if ([[line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]) {
+                    continue;
+                }
+                if (i % 2 == 0) {
+                    [input addObject:line];
+                } else {
+                    [output addObject:line];
+                }
+                i++;
             }
+            
+            int total = 0;
+            int passed = 0;
+            for (NSString * line in input) {
+                NSDictionary * d = [SMAddressParser parseAddress:line];
+                NSString * street = @"";
+                if ([d objectForKey:@"street"]) {
+                    street = [[d objectForKey:@"street"] lowercaseString];
+                }
+                NSString * number = @"";
+                if ([d objectForKey:@"number"]) {
+                    number = [[d objectForKey:@"number"] lowercaseString];
+                }
+                NSString * zip = @"";
+                if ([d objectForKey:@"zip"]) {
+                    zip = [[d objectForKey:@"zip"] lowercaseString];
+                }
+                NSString * city = @"";
+                if ([d objectForKey:@"city"]) {
+                    city = [[d objectForKey:@"city"] lowercaseString];
+                }
+                
+                NSString * test1 = [NSString stringWithFormat:@"%@|%@|%@|%@", street, number, zip, city];
+                NSString * test2 = [[output objectAtIndex:[input indexOfObject:line]] lowercaseString];
+                total++;
+                if ([test1 isEqualToString:test2]) {
+                    passed++;
+                } else {
+                    [_testOutput insertText:[NSString stringWithFormat:@"Input: %@\nOutput:\n%@\n***************\nWanted: %@\n\n", line, d, [output objectAtIndex:[input indexOfObject:line]]]];
+                }
+            }
+            
+            [_testOutput insertText:[NSString stringWithFormat:@"Passed %d/%d", passed, total]];
         }
     }
 }
