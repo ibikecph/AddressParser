@@ -37,7 +37,7 @@
                 </menuItem>
             </items>
         </menu>
-        <window title="AddressParser" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="371">
+        <window title="AddressParser - 22/11/2013" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="371">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <rect key="contentRect" x="763" y="323" width="754" height="360"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1058"/>

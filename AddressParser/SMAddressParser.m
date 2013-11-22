@@ -343,8 +343,11 @@
             [addr setValue:s1 forKey:@"city"];
         }
     } else {
-        exp = [NSRegularExpression regularExpressionWithPattern:@",\\s*(([\\p{L}\\.]\\s*)+)" options:0 error:NULL];
+        // [,\\s]+([\\w\\-\\'\\.]+\\s*)+
+        // ,\\s*(([\\p{L}\\.]\\s*)+)
+        exp = [NSRegularExpression regularExpressionWithPattern:@",\\s*(([\\p{L}\\.\\-\\']\\s*)+)" options:0 error:NULL];
         rangeC = [exp rangeOfFirstMatchInString:addressString options:0 range:NSMakeRange(0, [addressString length])];
+//        NSArray * ranges = [exp matchesInString:addressString options:0 range:NSMakeRange(0, [addressString length])];
         if (rangeC.location != NSNotFound) {
             NSString * s = [addressString substringWithRange:rangeC];
             if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
