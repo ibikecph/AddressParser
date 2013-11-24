@@ -273,6 +273,7 @@
         NSString * s = [addressString substringWithRange:rangeN];
         if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
             [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"number"];
+            addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
         }
     } else {
         exp = [NSRegularExpression regularExpressionWithPattern:@"[\\s,](\\d{1,3}[a-zA-Z]?)$" options:0 error:NULL];
@@ -281,6 +282,7 @@
             NSString * s = [addressString substringWithRange:rangeN];
             if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
                 [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"number"];
+                addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
             }
         } else {
             exp = [NSRegularExpression regularExpressionWithPattern:@"^(\\d{1,3}[a-zA-Z]?)[\\s,]+" options:0 error:NULL];
@@ -289,6 +291,7 @@
                 NSString * s = [addressString substringWithRange:rangeN];
                 if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
                     [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"number"];
+                    addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
                 }
             }
         }
@@ -300,18 +303,20 @@
         NSString * s = [addressString substringWithRange:rangeZ];
         if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
             [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"zip"];
+            addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
         }
     }
 
     NSInteger len = MIN(MIN(rangeN.location, rangeZ.location), [addressString length]);
-    
+    NSRange rangeS = NSMakeRange(0, 0);
     if (len > 0) {
         exp = [NSRegularExpression regularExpressionWithPattern:@"^[\\s,]*([^\\d,]+)" options:0 error:NULL];
-        NSRange rangeS = [exp rangeOfFirstMatchInString:addressString options:0 range:NSMakeRange(0, len)];
+        rangeS = [exp rangeOfFirstMatchInString:addressString options:0 range:NSMakeRange(0, len)];
         if (rangeS.location != NSNotFound) {
             NSString * s = [addressString substringWithRange:rangeS];
             if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
                 [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"street"];
+                addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
             }
         } else {
             exp = [NSRegularExpression regularExpressionWithPattern:@"^[\\s,]*\\d{1,3}[a-zA-Z]?[\\s,]([^\\d,]+)" options:0 error:NULL];
@@ -320,36 +325,25 @@
                 NSString * s = [addressString substringWithRange:rangeS];
                 if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
                     [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"street"];
+                    addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
                 }
             }
         }
     }
-    exp = [NSRegularExpression regularExpressionWithPattern:@"\\d\\w?\\s+(([\\p{L}\\.]\\s*)+)" options:0 error:NULL];
-    NSRegularExpression * e2 = [NSRegularExpression regularExpressionWithPattern:@"\\b(kbh|cph)\\.\\s*" options:NSRegularExpressionCaseInsensitive error:NULL];
-    NSRegularExpression * e3 = [NSRegularExpression regularExpressionWithPattern:@"\\b(kbh|cph)\\b" options:NSRegularExpressionCaseInsensitive error:NULL];
-    NSRange rangeC = [exp rangeOfFirstMatchInString:addressString options:0 range:NSMakeRange(0, [addressString length])];
-    if (rangeC.location != NSNotFound) {
-        NSString * s = [addressString substringWithRange:rangeC];
-        exp = [NSRegularExpression regularExpressionWithPattern:@"^(\\d\\w)+" options:0 error:NULL];
-        range = [exp rangeOfFirstMatchInString:s options:0 range:NSMakeRange(0, [s length])];
-        if (range.location != NSNotFound) {
-            s = [s stringByTrimmingCharactersInSet:set];
-            s = [s stringByReplacingCharactersInRange:range withString:@""];
-        }
-        if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-            NSMutableString * s1 = [NSMutableString stringWithString:[s stringByTrimmingCharactersInSet:set]];
-            NSUInteger count = [e2 replaceMatchesInString:s1 options:0 range:NSMakeRange(0, [s1 length]) withTemplate:@"København "];
-            count = [e3 replaceMatchesInString:s1 options:0 range:NSMakeRange(0, [s1 length]) withTemplate:@"København"];
-            [addr setValue:s1 forKey:@"city"];
-        }
-    } else {
-        // [,\\s]+([\\w\\-\\'\\.]+\\s*)+
-        // ,\\s*(([\\p{L}\\.]\\s*)+)
-        exp = [NSRegularExpression regularExpressionWithPattern:@",\\s*(([\\p{L}\\.\\-\\']\\s*)+)" options:0 error:NULL];
-        rangeC = [exp rangeOfFirstMatchInString:addressString options:0 range:NSMakeRange(0, [addressString length])];
-//        NSArray * ranges = [exp matchesInString:addressString options:0 range:NSMakeRange(0, [addressString length])];
+    
+    
+        exp = [NSRegularExpression regularExpressionWithPattern:@"[^,\\d]+" options:0 error:NULL];
+        NSRegularExpression * e2 = [NSRegularExpression regularExpressionWithPattern:@"\\b(kbh|cph)\\.\\s*" options:NSRegularExpressionCaseInsensitive error:NULL];
+        NSRegularExpression * e3 = [NSRegularExpression regularExpressionWithPattern:@"\\b(kbh|cph)\\b" options:NSRegularExpressionCaseInsensitive error:NULL];
+        NSRange rangeC = [exp rangeOfFirstMatchInString:addressString options:0 range:NSMakeRange(0, [addressString length])];
         if (rangeC.location != NSNotFound) {
             NSString * s = [addressString substringWithRange:rangeC];
+            exp = [NSRegularExpression regularExpressionWithPattern:@"^(\\d\\w)+" options:0 error:NULL];
+            range = [exp rangeOfFirstMatchInString:s options:0 range:NSMakeRange(0, [s length])];
+            if (range.location != NSNotFound) {
+                s = [s stringByTrimmingCharactersInSet:set];
+                s = [s stringByReplacingCharactersInRange:range withString:@""];
+            }
             if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
                 NSMutableString * s1 = [NSMutableString stringWithString:[s stringByTrimmingCharactersInSet:set]];
                 NSUInteger count = [e2 replaceMatchesInString:s1 options:0 range:NSMakeRange(0, [s1 length]) withTemplate:@"København "];
@@ -357,7 +351,6 @@
                 [addr setValue:s1 forKey:@"city"];
             }
         }
-    }
     
     return addr;
 }
