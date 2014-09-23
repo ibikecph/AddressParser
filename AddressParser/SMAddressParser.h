@@ -8,9 +8,16 @@
 
 #import <Foundation/Foundation.h>
 
+/**
+ * \ingroup libs
+ * Address parser
+ */
 
 @interface SMAddressParser : NSObject
 
+/**
+ * Parses addressString and splits it into street, number, zip, city
+ */
 + (NSDictionary*)parseAddress:(NSString*)addressString;
 
 
