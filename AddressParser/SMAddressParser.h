@@ -13,12 +13,14 @@
  * Address parser
  */
 
+@class UnknownSearchListItem;
+
 @interface SMAddressParser : NSObject
 
 /**
  * Parses addressString and splits it into street, number, zip, city
  */
-+ (NSDictionary*)parseAddress:(NSString*)addressString;
++ (UnknownSearchListItem *)parseAddress:(NSString *)addressString;
 
 
 @end

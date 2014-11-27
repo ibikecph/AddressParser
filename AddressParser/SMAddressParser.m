@@ -27,30 +27,31 @@
     return NO;
 }
 
-+ (NSDictionary*)parseStreetAndNumber:(NSString*)streetAndNumber {
++ (UnknownSearchListItem *)parseStreetAndNumber:(NSString*)streetAndNumber {
     NSMutableArray * arr = [NSMutableArray arrayWithArray:[streetAndNumber componentsSeparatedByString:@" "]];
     if ([arr count] == 0) {
-        return @{};
+        return nil;
     }
     if ([arr count]> 1) {
         NSString * number = [arr lastObject];
         if ([self testNumber:number]) {
             [arr removeObject:number];
-            return @{@"street" : [arr componentsJoinedByString:@" "],
-                     @"number" : number
-                     };
+            UnknownSearchListItem *item = [UnknownSearchListItem alloc];
+            item.street = [arr componentsJoinedByString:@" "];
+            item.number = number;
+            return item;
         }
     }
-    return @{@"street" : streetAndNumber};
+    return nil;
 }
 
-+ (NSDictionary*)parseZipAndCity:(NSString*)zipAndCity {
++ (UnknownSearchListItem *)parseZipAndCity:(NSString*)zipAndCity {
     if ([[zipAndCity stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]) {
-        return @{};
+        return nil;
     }
     NSMutableArray * arr = [NSMutableArray arrayWithArray:[zipAndCity componentsSeparatedByString:@" "]];
     if ([arr count] == 0) {
-        return @{};
+        return nil;
     }
     NSString * zip = nil;
     for (NSString * s in arr) {
@@ -65,17 +66,22 @@
             [arr removeObject:zip];
             NSString * city = [arr componentsJoinedByString:@" "];
             if ([[city stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]) {
-                return @{@"zip" : zip};
+                UnknownSearchListItem *item = [UnknownSearchListItem alloc];
+                item.zip = zip;
+                return item;
             } else {
-                return @{@"zip" : zip, @"city" : city};
+                UnknownSearchListItem *item = [UnknownSearchListItem alloc];
+                item.city = city;
+                item.zip = zip;
+                return item;
             }
         }
     }
-    return @{@"city" : zipAndCity};
+    return nil;
 }
 
 
-+ (NSDictionary*)parseAddressProcedure:(NSString*)addressString {
++ (UnknownSearchListItem *)parseAddressProcedure:(NSString*)addressString {
     /**
      * clear trailing spaces and commas
      */
@@ -96,13 +102,12 @@
      * we first check if there is a "," that divides street address from the zip and city part
      */
     if ([arr count] > 1) {
-        NSString * streetAndNumber = [[arr objectAtIndex:0] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-        NSDictionary* streetAddress = [self parseStreetAndNumber:streetAndNumber];
-        NSMutableDictionary * d = [NSMutableDictionary dictionaryWithDictionary:streetAddress];
+        NSString * streetAndNumber = [arr.firstObject stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        UnknownSearchListItem *item = [self parseStreetAndNumber:streetAndNumber];
         [arr removeObjectAtIndex:0];
         
-        if ([d objectForKey:@"number"] == nil && [self testNumber:[arr objectAtIndex:0]]) {
-            [d setValue:[arr objectAtIndex:0] forKey:@"number"];
+        if (item.number.length == 0 && [self testNumber:arr.firstObject]) {
+            item.number = arr.firstObject;
             [arr removeObjectAtIndex:0];
         } else {
             NSString * number = nil;
@@ -111,21 +116,18 @@
                 for (int i = 0; i < [a count]; i++) {
                     [a replaceObjectAtIndex:i withObject:[[a objectAtIndex:i] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
                 }
-                
                 for (NSString * s in a) {
                     if ([self testNumber:s]) {
                         number = s;
                         break;
                     }
                 }
-                
                 if (number) {
-                    [d setValue:number forKey:@"number"];
+                    item.number = number;
                     [a removeObject:number];
                     [arr replaceObjectAtIndex:0 withObject:[a componentsJoinedByString:@" "]];
                 }
             }
-            
         }
         
         if ([arr count] > 1) {
@@ -137,35 +139,39 @@
                 }
             }
             if (zip) {
-                [d setValue:zip forKey:@"zip"];
+                item.zip = zip;
                 if ([arr indexOfObject:zip] == 0) {
                     if ([arr count] > 1) {
-                        NSDictionary * zipCity = [self parseZipAndCity:[arr objectAtIndex:1]];
-                        [d addEntriesFromDictionary:zipCity];
+                        UnknownSearchListItem *zipCityItem = [self parseZipAndCity:[arr objectAtIndex:1]];
+                        item.zip = zipCityItem.zip;
+                        item.city = zipCityItem.city;
                     }
-                    return d;
+                    return item;
                 } else {
                     NSUInteger ind = [arr indexOfObject:zip];
                     [arr removeObjectsInRange:NSMakeRange(ind, [arr count] - ind)];
                     NSString * zipAndCity = [arr componentsJoinedByString:@" "];
-                    NSDictionary * zipCity = [self parseZipAndCity:zipAndCity];
-                    [d addEntriesFromDictionary:zipCity];
-                    return d;
+                    UnknownSearchListItem *zipCityItem = [self parseZipAndCity:zipAndCity];
+                    item.zip = zipCityItem.zip;
+                    item.city = zipCityItem.city;
+                    return item;
                 }
             } else {
                 NSString * zipAndCity = [arr objectAtIndex:0];
-                NSDictionary * zipCity = [self parseZipAndCity:zipAndCity];
-                [d addEntriesFromDictionary:zipCity];
-                return d;
+                UnknownSearchListItem *zipCityItem = [self parseZipAndCity:zipAndCity];
+                item.zip = zipCityItem.zip;
+                item.city = zipCityItem.city;
+                return item;
             }
         }
         
-        NSString * zipAndCity = [arr componentsJoinedByString:@" "];
-        NSDictionary * zipCity = [self parseZipAndCity:zipAndCity];
-        [d addEntriesFromDictionary:zipCity];
-        return d;
+        NSString *zipAndCity = [arr componentsJoinedByString:@" "];
+        UnknownSearchListItem *zipCityItem = [self parseZipAndCity:zipAndCity];
+        item.zip = zipCityItem.zip;
+        item.city = zipCityItem.city;
+        return item;
     } else {
-        NSMutableDictionary * addr = [NSMutableDictionary dictionary];
+        UnknownSearchListItem *item = [UnknownSearchListItem new];
         /**
          * there are no commas; we must check the string manually
          * we start by separating them by " "
@@ -191,7 +197,7 @@
             }
         }
         if (number) {
-            [addr setObject:number forKey:@"number"];
+            item.number = number;
             NSUInteger ind = [arr indexOfObject:number];
             if (ind > 0) {
                 NSMutableArray * a = [NSMutableArray array];
@@ -200,13 +206,14 @@
                 }
                 NSString * street = [a componentsJoinedByString:@" "];
                 if ([[street stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                    [addr setObject:street forKey:@"street"];
+                    item.street = street;
                 }
             }
             [arr removeObjectsInRange:NSMakeRange(0, ind + 1)];
             if ([arr count] > 0) {
-                NSDictionary * d = [self parseZipAndCity:[arr componentsJoinedByString:@" "]];
-                [addr addEntriesFromDictionary:d];
+                UnknownSearchListItem *zipCityItem = [self parseZipAndCity:[arr componentsJoinedByString:@" "]];
+                item.zip = zipCityItem.zip;
+                item.city = zipCityItem.city;
             }
         } else {
             /**
@@ -220,9 +227,8 @@
                     break;
                 }
             }
-            
             if (zip) {
-               [addr setObject:zip forKey:@"zip"];
+               item.zip = zip;
                 NSUInteger ind = [arr indexOfObject:zip];
                 if (ind > 0) {
                     NSMutableArray * a = [NSMutableArray array];
@@ -231,48 +237,50 @@
                     }
                     NSString * street = [a componentsJoinedByString:@" "];
                     if ([[street stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                        [addr setObject:street forKey:@"street"];
+                        item.street = street;
                     }
                 }
                 [arr removeObjectsInRange:NSMakeRange(0, ind + 1)];
                 NSString * city = [arr componentsJoinedByString:@" "];
                 if ([[city stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                    [addr setObject:city forKey:@"city"];
+                    item.city = city;
                 }
             } else {
                 /**
                  * there is no zip code or house number
                  * we assume that the user has just given us the street name
                  */
-                return @{@"street" : addressString};
+                item.street = addressString;
+                return item;
             }
         }
-        return addr;
+        return item;
     }
-    
-    
-    return @{};
+    return nil;
 }
 
-+ (NSDictionary*)parseAddressRegex:(NSString*)addressString {
++ (UnknownSearchListItem *)parseAddressRegex:(NSString *)addressString {
     /**
      * clear trailing spaces and commas
      */
     NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
     [set addCharactersInString:@","];
     addressString = [addressString stringByTrimmingCharactersInSet:set];
-    NSMutableDictionary * addr = [NSMutableDictionary dictionary];
+    
+    NSString *number = nil;
+    NSString *zip = nil;
+    NSString *street = nil;
+    NSString *city = nil;
     
     NSRegularExpression * exp;
     NSRange range;
-    
     
     exp = [NSRegularExpression regularExpressionWithPattern:@"[\\s,](\\d{1,3}[a-zA-Z]?)[\\s,]" options:0 error:NULL];
     NSRange rangeN = [exp rangeOfFirstMatchInString:addressString options:0 range:NSMakeRange(0, [addressString length])];
     if (rangeN.location != NSNotFound) {
         NSString * s = [addressString substringWithRange:rangeN];
         if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-            [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"number"];
+            number = [s stringByTrimmingCharactersInSet:set];
             addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
         }
     } else {
@@ -281,7 +289,7 @@
         if (rangeN.location != NSNotFound) {
             NSString * s = [addressString substringWithRange:rangeN];
             if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"number"];
+                number = [s stringByTrimmingCharactersInSet:set];
                 addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
             }
         } else {
@@ -290,7 +298,7 @@
             if (rangeN.location != NSNotFound) {
                 NSString * s = [addressString substringWithRange:rangeN];
                 if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                    [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"number"];
+                    number = [s stringByTrimmingCharactersInSet:set];
                     addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
                 }
             }
@@ -302,7 +310,7 @@
     if (rangeZ.location != NSNotFound) {
         NSString * s = [addressString substringWithRange:rangeZ];
         if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-            [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"zip"];
+            zip = [s stringByTrimmingCharactersInSet:set];
             addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
         }
     }
@@ -315,7 +323,7 @@
         if (rangeS.location != NSNotFound) {
             NSString * s = [addressString substringWithRange:rangeS];
             if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"street"];
+                street = [s stringByTrimmingCharactersInSet:set];
                 addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
             }
         } else {
@@ -324,7 +332,7 @@
             if (rangeS.location != NSNotFound) {
                 NSString * s = [addressString substringWithRange:rangeS];
                 if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                    [addr setValue:[s stringByTrimmingCharactersInSet:set] forKey:@"street"];
+                    street = [s stringByTrimmingCharactersInSet:set];
                     addressString = [[addressString stringByReplacingOccurrencesOfString:s withString:@","] stringByTrimmingCharactersInSet:set];
                 }
             }
@@ -332,30 +340,36 @@
     }
     
     
-        exp = [NSRegularExpression regularExpressionWithPattern:@"[^,\\d]+" options:0 error:NULL];
-        NSRegularExpression * e2 = [NSRegularExpression regularExpressionWithPattern:@"\\b(kbh|cph)\\.\\s*" options:NSRegularExpressionCaseInsensitive error:NULL];
-        NSRegularExpression * e3 = [NSRegularExpression regularExpressionWithPattern:@"\\b(kbh|cph)\\b" options:NSRegularExpressionCaseInsensitive error:NULL];
-        NSRange rangeC = [exp rangeOfFirstMatchInString:addressString options:0 range:NSMakeRange(0, [addressString length])];
-        if (rangeC.location != NSNotFound) {
-            NSString * s = [addressString substringWithRange:rangeC];
-            exp = [NSRegularExpression regularExpressionWithPattern:@"^(\\d\\w)+" options:0 error:NULL];
-            range = [exp rangeOfFirstMatchInString:s options:0 range:NSMakeRange(0, [s length])];
-            if (range.location != NSNotFound) {
-                s = [s stringByTrimmingCharactersInSet:set];
-                s = [s stringByReplacingCharactersInRange:range withString:@""];
-            }
-            if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                NSMutableString * s1 = [NSMutableString stringWithString:[s stringByTrimmingCharactersInSet:set]];
-                NSUInteger count = [e2 replaceMatchesInString:s1 options:0 range:NSMakeRange(0, [s1 length]) withTemplate:@"København "];
-                count = [e3 replaceMatchesInString:s1 options:0 range:NSMakeRange(0, [s1 length]) withTemplate:@"København"];
-                [addr setValue:s1 forKey:@"city"];
-            }
+    exp = [NSRegularExpression regularExpressionWithPattern:@"[^,\\d]+" options:0 error:NULL];
+    NSRegularExpression * e2 = [NSRegularExpression regularExpressionWithPattern:@"\\b(kbh|cph)\\.\\s*" options:NSRegularExpressionCaseInsensitive error:NULL];
+    NSRegularExpression * e3 = [NSRegularExpression regularExpressionWithPattern:@"\\b(kbh|cph)\\b" options:NSRegularExpressionCaseInsensitive error:NULL];
+    NSRange rangeC = [exp rangeOfFirstMatchInString:addressString options:0 range:NSMakeRange(0, [addressString length])];
+    if (rangeC.location != NSNotFound) {
+        NSString * s = [addressString substringWithRange:rangeC];
+        exp = [NSRegularExpression regularExpressionWithPattern:@"^(\\d\\w)+" options:0 error:NULL];
+        range = [exp rangeOfFirstMatchInString:s options:0 range:NSMakeRange(0, [s length])];
+        if (range.location != NSNotFound) {
+            s = [s stringByTrimmingCharactersInSet:set];
+            s = [s stringByReplacingCharactersInRange:range withString:@""];
         }
+        if (s && [[s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
+            NSMutableString * s1 = [NSMutableString stringWithString:[s stringByTrimmingCharactersInSet:set]];
+            NSUInteger count = [e2 replaceMatchesInString:s1 options:0 range:NSMakeRange(0, [s1 length]) withTemplate:@"København "];
+            count = [e3 replaceMatchesInString:s1 options:0 range:NSMakeRange(0, [s1 length]) withTemplate:@"København"];
+            city = s1;
+        }
+    }
     
-    return addr;
+    UnknownSearchListItem *item = [UnknownSearchListItem new];
+    item.street = street ?: @"";
+    item.number = number ?: @"";
+    item.zip = zip ?: @"";
+    item.city = city ?: @"";
+    
+    return item;
 }
 
-+ (NSDictionary*)parseAddress:(NSString*)addressString {
++ (UnknownSearchListItem *)parseAddress:(NSString *)addressString {
     return [self parseAddressRegex:addressString];
 }
 
